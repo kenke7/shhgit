@@ -3,6 +3,7 @@ package core
 import (
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -74,4 +75,31 @@ func GetMatchingFiles(dir string) []MatchFile {
 	})
 
 	return fileList
+}
+
+func GetStagedFiles(dir string) []MatchFile {
+	fileList := make([]MatchFile, 0)
+
+	out, err := exec.Command("git", "diff", "--staged", "--name-only", "--no-ext-diff", "--diff-filter=ACMRTUXB", "-z", "-C", dir).Output()
+	if err != nil {
+		return nil
+	}
+
+	for _, path := range zsplit(string(out)) {
+		path = dir + "/" + path
+		if !IsSkippableFile(path) {
+			fileList = append(fileList, NewMatchFile(path))
+		}
+	}
+
+	return fileList
+}
+
+func zsplit(str string) []string {
+	str = strings.Trim(str, "\000")
+	if  len(str) > 0 {
+		return strings.Split(str, "\000")
+	} else {
+		return make([]string, 0)
+	}
 }

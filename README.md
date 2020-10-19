@@ -42,7 +42,7 @@ shhgit can work in two ways: consuming the public APIs of GitHub, Gist, GitLab a
 
 By default, shhgit will run in the former 'public mode'. For GitHub and Gist, you will need to obtain and provide an access token (see [this guide](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line); it doesn't require any scopes or permissions. And then place it under `github_access_tokens` in `config.yaml`). GitLab and BitBucket do not require any API tokens.
 
-You can also forgo the signatures and use shhgit with your own custom search query, e.g. to find all AWS keys you could use `shhgit --search-query AWS_ACCESS_KEY_ID=AKIA`. And to run in local mode (and perhaps integrate in to your CI pipelines) you can pass the `--local` flag (see usage below).
+You can also forgo the signatures and use shhgit with your own custom search query, e.g. to find all AWS keys you could use `shhgit --search-query AWS_ACCESS_KEY_ID=AKIA`. And to run in local mode (and perhaps integrate in to your CI pipelines) you can pass the `--local` flag (see usage below). When run in local mode it is also viable to add `--staged` to only pick up staged files, which is especially useful when performing pre-commit checks.
 
 ### Options
 
@@ -59,6 +59,8 @@ You can also forgo the signatures and use shhgit with your own custom search que
         Finds high entropy strings in files. Higher threshold = more secret secrets, lower threshold = more false positives. Set to 0 to disable entropy checks (default 5.0)
 --local
         Specify local directory (absolute path) which to scan. Scans only given directory recursively. No need to have Github tokens with local run.
+--staged
+        Set to true to scan only staged files. Useful when performing pre-commit checks. Only take effect when run in local mode
 --maximum-file-size
         Maximum file size to process in KB (default 512)
 --maximum-repository-size

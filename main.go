@@ -75,7 +75,7 @@ func ProcessComments() {
 				dir := core.GetTempDir(core.GetHash(commentBody))
 				ioutil.WriteFile(filepath.Join(dir, "comment.ignore"), []byte(commentBody), 0644)
 
-				if !checkSignatures(dir, "ISSUE", 0, core.GITHUB_COMMENT) {
+				if !checkSignatures(core.GetMatchingFiles(dir), "ISSUE", 0, core.GITHUB_COMMENT) {
 					os.RemoveAll(dir)
 				}
 			}
@@ -98,22 +98,22 @@ func processRepositoryOrGist(url string, stars int, source core.GitResourceType)
 	}
 
 	session.Log.Debug("[%s] Cloning in to %s", url, strings.Replace(dir, *session.Options.TempDirectory, "", -1))
-	matchedAny = checkSignatures(dir, url, stars, source)
+	matchedAny = checkSignatures(core.GetMatchingFiles(dir), url, stars, source)
 	if !matchedAny {
 		os.RemoveAll(dir)
 	}
 }
 
-func checkSignatures(dir string, url string, stars int, source core.GitResourceType) (matchedAny bool) {
-	for _, file := range core.GetMatchingFiles(dir) {
+func checkSignatures(files []core.MatchFile, url string, stars int, source core.GitResourceType) (matchedAny bool) {
+	for _, file := range files {
 		var (
 			matches          []string
 			relativeFileName string
 		)
-		if strings.Contains(dir, *session.Options.TempDirectory) {
+		if strings.Contains(url, *session.Options.TempDirectory) {
 			relativeFileName = strings.Replace(file.Path, *session.Options.TempDirectory, "", -1)
 		} else {
-			relativeFileName = strings.Replace(file.Path, dir, "", -1)
+			relativeFileName = strings.Replace(file.Path, url, "", -1)
 		}
 
 		if *session.Options.SearchQuery != "" {
@@ -203,7 +203,15 @@ func main() {
 	if len(*session.Options.Local) > 0 {
 		session.Log.Info("[*] Scanning local directory: %s - skipping public repository checks...", color.BlueString(*session.Options.Local))
 		rc := 0
-		if checkSignatures(*session.Options.Local, *session.Options.Local, -1, core.LOCAL_SOURCE) {
+
+		paths := []core.MatchFile{}
+		if *session.Options.Staged {
+			paths = core.GetStagedFiles(*session.Options.Local)
+		} else {
+			paths = core.GetMatchingFiles(*session.Options.Local)
+		}
+
+		if checkSignatures(paths, *session.Options.Local, -1, core.LOCAL_SOURCE) {
 			rc = 1
 		} else {
 			session.Log.Info("[*] No matching secrets found in %s!", color.BlueString(*session.Options.Local))
